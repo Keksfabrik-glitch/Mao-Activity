@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Mao: Client starten",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/client"
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "mao",
+        "reveal": "always",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mao: Server starten",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/server"
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "mao",
+        "reveal": "always",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mao: Cloudflared Tunnel starten",
+      "type": "shell",
+      "command": "cloudflared tunnel --url http://localhost:5173",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "mao",
+        "reveal": "always",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mao: Lokal starten",
+      "dependsOn": [
+        "Mao: Client starten",
+        "Mao: Server starten",
+        "Mao: Cloudflared Tunnel starten"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}
