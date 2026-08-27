@@ -572,9 +572,14 @@ function wireGameControls(settings, game, hand) {
     }
   });
   document.querySelectorAll(".board-die").forEach(makeDieDraggable);
-  document.querySelector("#dice-toggle")?.addEventListener("click", () => {
+  const toggleDiceList = () => {
     document.querySelector("#dice-list").classList.toggle("is-collapsed");
     document.querySelector("#dice-add-button").classList.toggle("is-collapsed");
+  };
+  document.querySelector("#dice-toggle")?.addEventListener("click", toggleDiceList);
+  document.querySelector(".dice-panel")?.addEventListener("click", (event) => {
+    if (event.target.closest("button")) return;
+    toggleDiceList();
   });
 }
 

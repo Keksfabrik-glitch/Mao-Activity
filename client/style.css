@@ -207,11 +207,11 @@ h1 {
 .draw-panel input, .draw-panel label { width: 100%; }
 .draw-panel input { accent-color: #84d3c5; }
 .draw-panel output { float: right; color: #84d3c5; }
-.dice-panel { grid-column: 3; grid-row: 1; margin-top: 0.75rem; padding: 1rem; }
-.dice-heading { display: flex; justify-content: space-between; width: 100%; padding: 0.65rem; border: 1px solid #405263; border-radius: 6px; background: #293746; color: #d9e4eb; text-align: left; }
+.dice-panel { position: relative; z-index: 6; grid-column: 3; grid-row: 1; width: 100%; margin-top: 0.75rem; padding: 1rem; box-sizing: border-box; pointer-events: auto; }
+.dice-heading { display: flex; justify-content: space-between; width: 100%; box-sizing: border-box; padding: 0.65rem; border: 1px solid #405263; border-radius: 6px; background: #293746; color: #d9e4eb; text-align: left; }
 .dice-list { display: grid; gap: 0.45rem; max-height: 5rem; margin-top: 0.5rem; overflow-y: auto; transition: max-height 0.2s ease; }
 .dice-list.is-collapsed { max-height: 0; overflow: hidden; }
-.die-list-entry, .dice-add-button { width: 100%; padding: 0.5rem 0.65rem; border: 1px solid #405263; border-radius: 6px; background: #202d39; color: #d9e4eb; text-align: left; }
+.die-list-entry, .dice-add-button { width: 100%; box-sizing: border-box; padding: 0.5rem 0.65rem; border: 1px solid #405263; border-radius: 6px; background: #202d39; color: #d9e4eb; text-align: left; }
 .dice-add-button { color: #84d3c5; font-size: 1.1rem; text-align: center; }
 .dice-add-button.is-collapsed { display: none; }
 .board-die { position: absolute; top: calc(2rem + var(--die-index) * 3rem); right: 210px; z-index: 2; max-width: 150px; padding: 0.5rem 0.7rem; border-color: #84d3c5; background: #293746; color: #d9e4eb; cursor: grab; }
