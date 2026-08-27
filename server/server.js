@@ -192,6 +192,32 @@ app.post("/api/game/:channelId/knock", (req, res) => {
   }
 });
 
+app.post("/api/game/:channelId/dice", (req, res) => {
+  const game = getGame(req.params.channelId);
+  if (!game) {
+    return res.status(404).send({ error: "No settings exist for this voice channel" });
+  }
+  try {
+    const die = game.addDie(req.body.playerId, req.body.name, req.body.sides);
+    res.send({ die, game: game.snapshot() });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
+app.post("/api/game/:channelId/dice/:dieId/roll", (req, res) => {
+  const game = getGame(req.params.channelId);
+  if (!game) {
+    return res.status(404).send({ error: "No settings exist for this voice channel" });
+  }
+  try {
+    const roll = game.rollDie(req.body.playerId, req.params.dieId);
+    res.send({ ...roll, game: game.snapshot() });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
 app.post("/api/game/:channelId/give-from-draw", (req, res) => {
   const game = getGame(req.params.channelId);
   if (!game) {

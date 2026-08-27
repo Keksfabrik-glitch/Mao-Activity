@@ -1,5 +1,6 @@
 const SUITS = ["clubs", "diamonds", "hearts", "spades"];
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+const KNOCK_WINDOW_MS = 5000;
 
 export class MaoGame {
   constructor(cardSets, faceDownCardsPlayable, taxes = 50, taxesMinimum = 15) {
@@ -11,6 +12,10 @@ export class MaoGame {
     this.playerNames = new Map();
     this.history = [];
     this.knockCounts = new Map();
+    this.knockHistory = new Map();
+    this.knockTimers = new Map();
+    this.dice = [];
+    this.nextDieId = 1;
     this.drawPile = shuffle(createDeck(cardSets));
     this.discardPile = [this.drawPile.pop()];
   }
@@ -30,6 +35,7 @@ export class MaoGame {
     this.addPlayer(playerId);
     const cards = this.drawCards(count);
     this.players.get(playerId).push(...cards);
+    this.resetKnocks();
     this.addHistory({ type: historyType, playerId, count });
     return cards;
   }
@@ -41,6 +47,7 @@ export class MaoGame {
     const cards = takeCards(sourceHand, cardIds);
     this.players.set(fromPlayerId, sourceHand.filter((card) => !cardIds.includes(card.id)));
     this.players.get(toPlayerId).push(...cards);
+    this.resetKnocks();
     this.addHistory({ type: "give", playerId: fromPlayerId, toPlayerId, count: cards.length });
     return cards;
   }
@@ -61,6 +68,7 @@ export class MaoGame {
     }));
     this.players.set(playerId, hand.filter((card) => !cardIds.includes(card.id)));
     this.discardPile.push(...cards);
+    this.resetKnocks();
     this.addHistory({ type: "discard", playerId, cards });
     return cards;
   }
@@ -68,14 +76,58 @@ export class MaoGame {
   knock(playerId) {
     this.addPlayer(playerId);
     const count = (this.knockCounts.get(playerId) || 0) + 1;
+    this.clearKnockTimer(playerId);
     this.knockCounts.set(playerId, count);
-    this.addHistory({ type: "knock", playerId, count });
+    const historyEvent = this.knockHistory.get(playerId) || this.addHistory({ type: "knock", playerId, count: 0 });
+    historyEvent.count = count;
+    this.knockHistory.set(playerId, historyEvent);
+    this.knockTimers.set(playerId, setTimeout(() => {
+      this.knockCounts.delete(playerId);
+      this.knockHistory.delete(playerId);
+      this.knockTimers.delete(playerId);
+    }, KNOCK_WINDOW_MS));
     return count;
   }
 
+  resetKnocks() {
+    for (const playerId of this.knockCounts.keys()) this.clearKnockTimer(playerId);
+    this.knockCounts.clear();
+    this.knockHistory.clear();
+  }
+
+  clearKnockTimer(playerId) {
+    const timer = this.knockTimers.get(playerId);
+    if (timer) clearTimeout(timer);
+    this.knockTimers.delete(playerId);
+  }
+
+  addDie(playerId, name, sides) {
+    this.addPlayer(playerId);
+    if (typeof name !== "string" || name.trim().length === 0 || name.trim().length > 40) {
+      throw new Error("A die name is required and must be at most 40 characters");
+    }
+    if (!Array.isArray(sides) || sides.length < 2 || sides.length > 100 || sides.some((side) => typeof side !== "string" || side.trim().length === 0 || side.length > 80)) {
+      throw new Error("A die must have between 2 and 100 non-empty sides");
+    }
+    const die = { id: `die-${this.nextDieId++}`, name: name.trim(), sides: sides.map((side) => side.trim()), createdBy: playerId };
+    this.dice.push(die);
+    return die;
+  }
+
+  rollDie(playerId, dieId) {
+    this.addPlayer(playerId);
+    const die = this.dice.find((candidate) => candidate.id === dieId);
+    if (!die) throw new Error("Die not found");
+    const result = die.sides[Math.floor(Math.random() * die.sides.length)];
+    this.addHistory({ type: "roll", playerId, dieId: die.id, dieName: die.name, result });
+    return { die, result };
+  }
+
   addHistory(event) {
-    this.history.push({ id: `${Date.now()}-${this.history.length}`, ...event });
+    const historyEvent = { id: `${Date.now()}-${this.history.length}`, ...event };
+    this.history.push(historyEvent);
     if (this.history.length > 100) this.history.shift();
+    return historyEvent;
   }
 
   drawCards(count) {
@@ -142,6 +194,7 @@ export class MaoGame {
       discardPile: [...this.discardPile],
       playerNames: Object.fromEntries(this.playerNames),
       history: [...this.history],
+      dice: this.dice.map((die) => ({ ...die, sides: [...die.sides] })),
       players: Object.fromEntries(
         [...this.players].map(([playerId, hand]) => [playerId, [...hand]])
       ),
