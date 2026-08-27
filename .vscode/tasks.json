@@ -58,6 +58,74 @@
       ],
       "dependsOrder": "parallel",
       "problemMatcher": []
+    },
+    {
+      "label": "Mao: Lokal beenden",
+      "type": "shell",
+      "command": "$ports = 3001, 5173; Get-NetTCPConnection -LocalPort $ports -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { taskkill /PID $_ /T /F 2>$null }; Get-Process cloudflared -ErrorAction SilentlyContinue | ForEach-Object { taskkill /PID $_.Id /T /F 2>$null }",
+      "presentation": {
+        "reveal": "never",
+        "close": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mao: Client rerun",
+      "type": "shell",
+      "command": "$processIds = Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; $processIds | ForEach-Object { taskkill /PID $_ /T /F 2>$null }; npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/client"
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "mao",
+        "reveal": "always",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mao: Server rerun",
+      "type": "shell",
+      "command": "$processIds = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; $processIds | ForEach-Object { taskkill /PID $_ /T /F 2>$null }; npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/server"
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "mao",
+        "reveal": "always",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mao: Cloudflared Tunnel rerun",
+      "type": "shell",
+      "command": "Get-Process cloudflared -ErrorAction SilentlyContinue | ForEach-Object { taskkill /PID $_.Id /T /F 2>$null }; cloudflared tunnel --url http://localhost:5173",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "panel": "dedicated",
+        "group": "mao",
+        "reveal": "always",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Mao: Lokal rerun",
+      "dependsOn": [
+        "Mao: Client rerun",
+        "Mao: Server rerun",
+        "Mao: Cloudflared Tunnel rerun"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
     }
   ]
 }

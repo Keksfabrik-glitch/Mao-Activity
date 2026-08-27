@@ -8,23 +8,29 @@ export class MaoGame {
     this.taxes = taxes;
     this.taxesMinimum = taxesMinimum;
     this.players = new Map();
+    this.playerNames = new Map();
+    this.history = [];
+    this.knockCounts = new Map();
     this.drawPile = shuffle(createDeck(cardSets));
-    this.discardPile = [];
+    this.discardPile = [this.drawPile.pop()];
   }
 
-  addPlayer(playerId) {
+  addPlayer(playerId, playerName = null) {
     if (!playerId || typeof playerId !== "string") {
       throw new Error("playerId is required");
     }
     if (!this.players.has(playerId)) {
       this.players.set(playerId, []);
     }
+    if (playerName) this.playerNames.set(playerId, playerName);
+    else if (!this.playerNames.has(playerId)) this.playerNames.set(playerId, playerId);
   }
 
-  drawToPlayer(playerId, count) {
+  drawToPlayer(playerId, count, historyType = "draw") {
     this.addPlayer(playerId);
     const cards = this.drawCards(count);
     this.players.get(playerId).push(...cards);
+    this.addHistory({ type: historyType, playerId, count });
     return cards;
   }
 
@@ -35,20 +41,41 @@ export class MaoGame {
     const cards = takeCards(sourceHand, cardIds);
     this.players.set(fromPlayerId, sourceHand.filter((card) => !cardIds.includes(card.id)));
     this.players.get(toPlayerId).push(...cards);
+    this.addHistory({ type: "give", playerId: fromPlayerId, toPlayerId, count: cards.length });
     return cards;
   }
 
   giveFromDraw(toPlayerId, count) {
-    return this.drawToPlayer(toPlayerId, count);
+    return this.drawToPlayer(toPlayerId, count, "give");
   }
 
   discardCards(playerId, cardIds, faceDown = false) {
     this.addPlayer(playerId);
     const hand = this.players.get(playerId);
-    const cards = takeCards(hand, cardIds).map((card) => ({ ...card, faceDown }));
+    const faceDownIds = faceDown instanceof Set
+      ? faceDown
+      : new Set(faceDown ? cardIds : []);
+    const cards = takeCards(hand, cardIds).map((card) => ({
+      ...card,
+      faceDown: faceDownIds.has(card.id),
+    }));
     this.players.set(playerId, hand.filter((card) => !cardIds.includes(card.id)));
     this.discardPile.push(...cards);
+    this.addHistory({ type: "discard", playerId, cards });
     return cards;
+  }
+
+  knock(playerId) {
+    this.addPlayer(playerId);
+    const count = (this.knockCounts.get(playerId) || 0) + 1;
+    this.knockCounts.set(playerId, count);
+    this.addHistory({ type: "knock", playerId, count });
+    return count;
+  }
+
+  addHistory(event) {
+    this.history.push({ id: `${Date.now()}-${this.history.length}`, ...event });
+    if (this.history.length > 100) this.history.shift();
   }
 
   drawCards(count) {
@@ -113,6 +140,8 @@ export class MaoGame {
       taxesMinimum: this.taxesMinimum,
       drawPileCount: this.drawPile.length,
       discardPile: [...this.discardPile],
+      playerNames: Object.fromEntries(this.playerNames),
+      history: [...this.history],
       players: Object.fromEntries(
         [...this.players].map(([playerId, hand]) => [playerId, [...hand]])
       ),

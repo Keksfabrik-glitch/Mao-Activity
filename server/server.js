@@ -14,10 +14,9 @@ const games = new Map();
 const activePlayers = new Map();
 const PLAYER_TIMEOUT_MS = 15000;
 const DEFAULT_SETTINGS = {
-  cardSets: 2,
+  cardSets: 3,
   taxes: 50,
   taxesMinimum: 15,
-  turnLocking: true,
   dice: true,
   customDice: true,
   counter: true,
@@ -111,7 +110,6 @@ function saveSettings(channelId, settings, res) {
     cardSets: settings.cardSets,
     taxes: settings.taxes,
     taxesMinimum: settings.taxesMinimum,
-    turnLocking: Boolean(settings.turnLocking),
     dice: Boolean(settings.dice),
     customDice: Boolean(settings.customDice),
     counter: Boolean(settings.counter),
@@ -152,14 +150,14 @@ app.get("/api/game/:channelId", (req, res) => {
   }
   if (req.query.playerId) {
     touchPlayer(req.params.channelId, req.query.playerId);
-    game.addPlayer(req.query.playerId);
+      game.addPlayer(req.query.playerId, req.query.playerName);
   }
   res.send({ game: game.snapshot() });
 });
 
 app.post("/api/game/:channelId/players/:playerId/heartbeat", (req, res) => {
   touchPlayer(req.params.channelId, req.params.playerId);
-  if (getGame(req.params.channelId)) getGame(req.params.channelId).addPlayer(req.params.playerId);
+  if (getGame(req.params.channelId)) getGame(req.params.channelId).addPlayer(req.params.playerId, req.body.playerName);
   res.send({ ok: true });
 });
 
@@ -176,6 +174,19 @@ app.post("/api/game/:channelId/draw", (req, res) => {
   try {
     const cards = game.drawToPlayer(req.body.playerId, req.body.count);
     res.send({ cards, game: game.snapshot() });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
+app.post("/api/game/:channelId/knock", (req, res) => {
+  const game = getGame(req.params.channelId);
+  if (!game) {
+    return res.status(404).send({ error: "No settings exist for this voice channel" });
+  }
+  try {
+    const count = game.knock(req.body.playerId);
+    res.send({ count, game: game.snapshot() });
   } catch (error) {
     res.status(400).send({ error: error.message });
   }
@@ -213,11 +224,11 @@ app.post("/api/game/:channelId/discard", (req, res) => {
     return res.status(404).send({ error: "No settings exist for this voice channel" });
   }
   try {
-    const faceDown = Boolean(req.body.faceDown);
-    if (faceDown && !game.faceDownCardsPlayable) {
+    const faceDownCardIds = new Set(req.body.faceDownCardIds || []);
+    if (faceDownCardIds.size > 0 && !game.faceDownCardsPlayable) {
       return res.status(400).send({ error: "Face-down cards are disabled in the settings" });
     }
-    const cards = game.discardCards(req.body.playerId, req.body.cardIds, faceDown);
+    const cards = game.discardCards(req.body.playerId, req.body.cardIds, faceDownCardIds);
     res.send({ cards, game: game.snapshot() });
   } catch (error) {
     res.status(400).send({ error: error.message });

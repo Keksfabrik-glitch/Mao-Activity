@@ -1,3 +1,7 @@
+.players-panel { grid-column: 1; grid-row: 1; }
+.game-history { display: grid; gap: 0.35rem; max-height: 180px; margin-top: 1rem; overflow-y: auto; }
+.history-entry { width: 100%; padding: 0.45rem 0.55rem; border: 1px solid #405263; border-radius: 6px; background: #202d39; color: #d9e4eb; font-size: 0.72rem; line-height: 1.3; text-align: left; }
+.history-entry:hover, .history-entry:focus-visible { border-color: #84d3c5; background: #293b47; }
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -179,39 +183,48 @@ h1 {
 .table-area { position: relative; display: grid; grid-template-columns: 180px minmax(320px, 1fr) 180px; grid-template-rows: minmax(300px, 1fr) auto; gap: 1rem; width: 100%; height: calc(100% - 1rem); margin: auto; }
 .board-panel, .hand-panel { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .board-panel { padding: 1rem; }
-.discard-panel { grid-column: 2; grid-row: 1; justify-self: center; transform: translateX(-145px); }
+.discard-panel { position: relative; z-index: 3; grid-column: 2; grid-row: 1; justify-self: center; transform: translate(-145px, 106px); }
 .panel-heading, .hand-heading { display: flex; align-items: center; gap: 0.55rem; }
 .panel-heading h2, .hand-heading h2 { margin: 0; font-size: 1rem; }
 .panel-number { color: #84d3c5; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; }
 .panel-hint, .empty-state, .free-space-label { color: #91a1b0; font-size: 0.8rem; }
-.card-stage { display: grid; place-items: center; min-height: 190px; }
-.playing-card, .empty-card, .card-back { width: 76px; height: 108px; border: 1px solid #d8dee5; border-radius: 7px; box-sizing: border-box; background: #f7f4ed; color: #192331; box-shadow: 0 8px 15px #0e141c88; }
-.playing-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; padding: 0.5rem; font-size: 1.3rem; cursor: pointer; }
-.playing-card img { width: 38px; height: 38px; object-fit: contain; }
-.playing-card.face-down img { width: 100%; height: 100%; border-radius: 5px; }
-.playing-card:nth-child(odd), .playing-card[data-card-id*="hearts"], .playing-card[data-card-id*="diamonds"] { color: #c85858; }
-.playing-card.face-down, .card-back { display: grid; place-items: center; background: #496078; color: #d4eee9; border-color: #84d3c5; font-weight: 800; letter-spacing: 0.1em; }
+.card-stage { display: grid; place-items: center; min-height: 220px; cursor: pointer; }
+.card-stage.selected { outline: 3px solid #84d3c5; outline-offset: 0.4rem; }
+.card-stage .playing-card { width: 136px; height: 212px; }
+.playing-card, .empty-card, .card-back { width: 76px; height: 118px; border: none; border-radius: 7px; box-sizing: border-box; background: transparent; color: #192331; box-shadow: 0 8px 15px #0e141c88; overflow: hidden; }
+.playing-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; padding: 0; font-size: 1.3rem; cursor: pointer; }
+.playing-card img, .card-back { width: 100%; height: 100%; object-fit: fill; display: block; border-radius: 7px; image-rendering: auto; }
+.playing-card.face-down, .card-back { display: grid; place-items: center; background: transparent; border: none; }
 .playing-card.selected { transform: translateY(-10px); outline: 3px solid #84d3c5; }
 .empty-card { display: grid; place-items: center; color: #8795a3; }
-.draw-panel { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem; transform: translateX(145px); }
-.draw-stack { display: grid; place-items: center; gap: 0.7rem; margin: 2rem 0 0.5rem; }
-.draw-stack .card-back { transform: rotate(4deg); }
+.draw-panel { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.8rem; transform: translate(145px, -106px); }
+.draw-stack { position: relative; display: grid; place-items: center; gap: 0.7rem; margin: 2rem 0 0.5rem; padding: 0; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; }
+.draw-stack.selected { outline: 3px solid #84d3c5; outline-offset: 0.4rem; }
+.draw-stack .card-back { width: 136px; height: 212px; }
+.draw-stack .card-back { transform: rotate(0deg); }
 .draw-stack span { color: #aebac5; font-size: 0.85rem; }
+.draw-amount { position: absolute; top: 50%; left: calc(100% + 0.8rem); color: #84d3c5; font-size: 1.4rem; font-weight: 800; }
 .draw-panel input, .draw-panel label { width: 100%; }
 .draw-panel input { accent-color: #84d3c5; }
 .draw-panel output { float: right; color: #84d3c5; }
 .object-panel { grid-column: 3; grid-row: 1; width: auto; padding: 0; }
 .object-manager, .player-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; margin-top: 0.75rem; padding: 0.65rem; border: 1px solid #405263; border-radius: 6px; background: #293746; color: inherit; box-sizing: border-box; }
+.give-player-button { margin-left: auto; padding: 0.35rem 0.55rem; border-color: #405263; background: transparent; color: #9edbd1; font-size: 0.75rem; }
+.give-player-button.is-hidden { display: none; }
 .object-manager button, .subtle-button { padding: 0.35rem 0.55rem; background: transparent; color: #9edbd1; font-size: 0.75rem; }
 .floating-object { position: absolute; z-index: 5; display: grid; gap: 0.45rem; min-width: 120px; padding: 0.8rem; border: 1px solid #84d3c5; border-radius: 8px; background: #273642; box-shadow: 0 12px 28px #0b111888; cursor: grab; }
 .floating-object strong { font-size: 2rem; text-align: center; }
 .dice-object { top: 40%; left: 56%; }.counter-object { top: 58%; left: 68%; }
 .dragging { cursor: grabbing; opacity: 0.9; }
 .players-panel { grid-column: 1; grid-row: 1; }
+.game-history { display: grid; gap: 0.35rem; min-height: 2.4rem; max-height: 180px; margin-top: 1rem; padding: 0.35rem; border: 1px solid #405263; border-radius: 6px; background: #182530; overflow-y: auto; }
+.history-entry { width: 100%; padding: 0.45rem 0.55rem; border: 1px solid #405263; border-radius: 6px; background: #202d39; color: #d9e4eb; font-size: 0.72rem; line-height: 1.3; text-align: left; }
+.history-entry:hover, .history-entry:focus-visible { border-color: #84d3c5; background: #293b47; }
 .player-row { justify-content: flex-start; text-align: left; cursor: pointer; }.player-row span { color: #84d3c5; }.player-row.target { outline: 2px solid #e5bd73; }
 .give-controls { display: grid; gap: 0.45rem; margin-top: 1rem; }.give-controls input { width: 100%; box-sizing: border-box; }
-.hand-panel { grid-column: 1 / -1; grid-row: 2; align-self: end; min-width: 0; padding: 1rem; }.hand-heading { justify-content: center; gap: 1rem; }.hand-heading > span { color: #91a1b0; font-size: 0.8rem; }
-.hand-cards { display: flex; justify-content: center; min-height: 145px; padding: 1.5rem 2rem 0.5rem; overflow-x: auto; }.hand-cards .playing-card { flex: 0 0 76px; margin-left: -35px; transform: translateY(calc(var(--card-index) * -1px)); }.hand-cards .playing-card:first-child { margin-left: 0; }.hand-cards .playing-card:hover { z-index: 2; transform: translateY(-12px); }
+.hand-panel { position: absolute; left: 50%; bottom: -110px; z-index: 4; width: max-content; max-width: calc(100% - 2rem); min-width: 0; padding: 1rem; transform: translateX(-50%); pointer-events: none; }
+.hand-heading { justify-content: center; gap: 1rem; }.hand-heading > span { color: #91a1b0; font-size: 0.8rem; }.hand-page-button { width: 2rem; height: 2rem; padding: 0; border: 1px solid #405263; background: #202d39; color: #d9e4eb; font-size: 0.8rem; line-height: 1; pointer-events: auto; }.hand-page-button:disabled { opacity: 0.35; cursor: default; }.hand-page-button:not(:disabled):hover { border-color: #84d3c5; }
+.hand-cards { display: grid; grid-template-columns: repeat(7, 120px); gap: 0.75rem; min-height: 225px; padding: 1.5rem 1rem 0.5rem; overflow: visible; pointer-events: none; }.hand-cards .playing-card { position: relative; z-index: auto; width: 120px; height: 186px; margin: 0; transform: none; transform-origin: center bottom; pointer-events: auto; }.hand-cards .playing-card:hover, .hand-cards .playing-card.selected { z-index: auto; transform: none; outline: 3px solid #84d3c5; outline-offset: 3px; }.hand-cards .hand-card-slot.is-empty { visibility: hidden; pointer-events: none; }
 .hand-actions { display: flex; justify-content: center; gap: 0.5rem; }.knock-button { position: absolute; right: 200px; bottom: 180px; border-color: #d56a6a; background: #8c3e48; color: white; font-weight: 800; letter-spacing: 0.08em; }.free-space-label { display: none; }.settings-button { position: absolute; top: 0.75rem; right: 0.75rem; z-index: 2; }.history-modal { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: #0c1219cc; }.history-content { width: min(90vw, 600px); max-height: 80vh; overflow: auto; padding: 1.5rem; border: 0; border-radius: 10px; background: #202b37; }.history-content .playing-card { margin: 0.3rem; display: inline-flex; }.history-content > button { float: right; }
 
 .logo {
@@ -276,5 +289,5 @@ button:focus-visible {
 @media (max-width: 800px) {
   .game-screen { width: 100vw; height: 100vh; overflow: auto; }
   .game-header { grid-template-columns: 1fr auto; }.game-header .player-profile { grid-column: 1 / -1; grid-row: 2; }
-  .table-area { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }.discard-panel { grid-column: 1; transform: none; }.draw-panel { grid-column: 2; transform: none; }.object-panel { grid-column: 1 / -1; grid-row: 2; }.players-panel { display: none; }.hand-panel { grid-row: 3; }.knock-button { right: 1rem; bottom: 210px; }.free-space-label { display: none; }
+  .table-area { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }.discard-panel { grid-column: 1; transform: translateY(106px); }.draw-panel { grid-column: 2; transform: translateY(-106px); }.object-panel { grid-column: 1 / -1; grid-row: 2; }.players-panel { display: none; }.hand-panel { grid-row: 3; }.knock-button { right: 1rem; bottom: 210px; }.free-space-label { display: none; }
 }

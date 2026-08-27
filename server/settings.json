@@ -1,12 +1,1 @@
-{
-  "1541344944646524951": {
-    "cardSets": 5,
-    "taxes": 50,
-    "taxesMinimum": 15,
-    "turnLocking": true,
-    "dice": true,
-    "customDice": true,
-    "counter": true,
-    "faceDownCardsPlayable": true
-  }
-}
+{}
