@@ -36,7 +36,7 @@
     {
       "label": "Mao: Cloudflared Tunnel starten",
       "type": "shell",
-      "command": "cloudflared tunnel --url http://localhost:5173",
+      "command": "cloudflared tunnel run mao",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -104,7 +104,7 @@
     {
       "label": "Mao: Cloudflared Tunnel rerun",
       "type": "shell",
-      "command": "Get-Process cloudflared -ErrorAction SilentlyContinue | ForEach-Object { taskkill /PID $_.Id /T /F 2>$null }; cloudflared tunnel --url http://localhost:5173",
+      "command": "Get-Process cloudflared -ErrorAction SilentlyContinue | ForEach-Object { taskkill /PID $_.Id /T /F 2>$null };cloudflared tunnel run mao",
       "options": {
         "cwd": "${workspaceFolder}"
       },
