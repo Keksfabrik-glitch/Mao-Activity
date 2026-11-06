@@ -214,7 +214,8 @@ h1 {
 .die-list-entry, .dice-add-button { width: 100%; box-sizing: border-box; padding: 0.5rem 0.65rem; border: 1px solid #405263; border-radius: 6px; background: #202d39; color: #d9e4eb; text-align: left; }
 .dice-add-button { color: #84d3c5; font-size: 1.1rem; text-align: center; }
 .dice-add-button.is-collapsed { display: none; }
-.board-die { position: absolute; top: calc(2rem + var(--die-index) * 3rem); right: 210px; z-index: 2; max-width: 150px; padding: 0.5rem 0.7rem; border-color: #84d3c5; background: #293746; color: #d9e4eb; cursor: grab; }
+.board-die { position: absolute; top: calc(2rem + var(--die-index) * 3rem); right: 210px; z-index: 2; max-width: 150px; padding: 0.5rem 0.7rem; border-color: #84d3c5; background: #293746; color: #d9e4eb; cursor: grab; touch-action: none; user-select: none; }
+.board-die:active { cursor: grabbing; }
 .dice-dialog { width: min(90vw, 420px); border: 1px solid #84d3c5; border-radius: 8px; background: #202d39; color: #eef3f8; }
 .dice-dialog::backdrop { background: #0c1219cc; }
 .dice-dialog form { display: grid; gap: 0.55rem; }

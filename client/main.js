@@ -33,6 +33,8 @@ let auth;
 let currentPlayerId;
 let currentPlayerName;
 let heartbeatTimer;
+let pollTimer;
+const diePositions = new Map();
 
 const discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
 
@@ -85,7 +87,7 @@ async function setupDiscordSdk() {
 
 async function appendVoiceChannelName() {
   const channelName = document.querySelector("#channel-name");
-  let activityChannelName = "Unbekannter Channel";
+  let activityChannelName = "Unknown channel";
 
   // Requesting the channel in DMs requires the dm_channels.read scope.
   if (discordSdk.channelId != null && discordSdk.guildId != null) {
@@ -160,15 +162,31 @@ async function loadGame(settings) {
   window.currentGame = game;
   renderGameScreen(settings);
 }
-
+function startGamePolling(settings) {
+  clearInterval(pollTimer);
+  const channelId = encodeURIComponent(discordSdk.channelId);
+  pollTimer = setInterval(async () => {
+    try {
+      const response = await fetch(`/api/game/${channelId}`);
+      if (!response.ok) return;
+      const { game } = await response.json();
+      if (JSON.stringify(game) !== JSON.stringify(window.currentGame)) {
+        window.currentGame = game;
+        renderGameScreen(settings);
+      }
+    } catch (error) {
+      // Netzwerkfehler beim Polling ignorieren, nächster Versuch folgt automatisch
+    }
+  }, 2000);
+}
 function renderLoadingScreen() {
   document.querySelector("#app").innerHTML = `
     <main class="activity-shell">
       <img src="${robbeLogo}" class="logo" alt="Mao" />
-      <p>Spiel wird geladen ...</p>
+      <p>Loading game...</p>
       <p id="channel-name" class="is-hidden"></p>
       <div class="player-profile is-hidden">
-        <img id="player-avatar" class="player-avatar" alt="Spieleravatar" />
+        <img id="player-avatar" class="player-avatar" alt="Player avatar" />
         <span id="player-name"></span>
       </div>
     </main>
@@ -191,26 +209,26 @@ function renderSettingsScreen(currentSettings = null) {
     <main class="activity-shell settings-screen">
       <section class="settings-panel">
         <p class="eyebrow">Mao</p>
-        <h1>Spieleinstellungen</h1>
-        <p class="settings-intro">Die erste Person legt die Regeln für diesen Voice-Channel fest.</p>
+        <h1>Game settings</h1>
+        <p class="settings-intro">The first player sets the rules for this voice channel.</p>
         <form id="settings-form">
-          <label for="card-sets">Kartensets: <output id="card-sets-value">${defaults.cardSets}</output></label>
+          <label for="card-sets">Card decks: <output id="card-sets-value">${defaults.cardSets}</output></label>
           <input id="card-sets" name="cardSets" type="range" min="2" max="5" value="${defaults.cardSets}" />
 
           <label for="taxes">Taxes: <output id="taxes-value">${defaults.taxes}%</output></label>
           <input id="taxes" name="taxes" type="range" min="0" max="100" value="${defaults.taxes}" />
 
-          <label for="taxes-minimum">Taxes-Minimum: <output id="taxes-minimum-value">${defaults.taxesMinimum}</output></label>
+          <label for="taxes-minimum">Minimum tax: <output id="taxes-minimum-value">${defaults.taxesMinimum}</output></label>
           <input id="taxes-minimum" name="taxesMinimum" type="number" min="0" max="260" value="${defaults.taxesMinimum}" ${defaults.taxes === 0 ? "disabled" : ""} />
 
           <div class="settings-options">
-            ${renderToggle("dice", "Würfel", defaults.dice)}
-            ${renderToggle("custom-dice", "Custom Würfel", defaults.customDice)}
+            ${renderToggle("dice", "Dice", defaults.dice)}
+            ${renderToggle("custom-dice", "Custom dice", defaults.customDice)}
             ${renderToggle("counter", "Counter", defaults.counter)}
-            ${renderToggle("face-down-cards-playable", "Karten umgedreht spielbar", defaults.faceDownCardsPlayable)}
+            ${renderToggle("face-down-cards-playable", "Allow face-down cards", defaults.faceDownCardsPlayable)}
           </div>
           <p id="settings-error" class="form-error" role="alert"></p>
-          <button type="submit">Einstellungen speichern</button>
+          <button type="submit">Save settings</button>
         </form>
       </section>
     </main>
@@ -276,7 +294,7 @@ async function saveSettings(event) {
   }
 
   if (!response.ok) {
-    document.querySelector("#settings-error").textContent = "Einstellungen konnten nicht gespeichert werden.";
+    document.querySelector("#settings-error").textContent = "Could not save settings.";
     return;
   }
 
@@ -301,6 +319,9 @@ function renderGameScreen(settings) {
       </section>
     </main>`;
   wireGameControls(settings, game, hand);
+  if (discordSdk.channelId != null) {
+    startGamePolling(settings);
+  }
 }
 
 function sortHand(hand) {
@@ -338,8 +359,13 @@ function renderHistory(history, playerNames) {
     const playerName = playerNames[event.playerId] || event.playerId;
     let message;
     if (event.type === "discard") {
-      const cards = formatCardList(event.cards);
-      message = `${playerName} laid ${cards}`;
+      const faceDownCards = event.cards.filter((card) => card.faceDown);
+      if (faceDownCards.length > 0) {
+        const faceUpCards = formatCardList(event.cards.filter((card) => !card.faceDown));
+        message = `${playerName} played ${faceDownCards.length} unknown cards${faceUpCards ? ` and ${faceUpCards}` : ""}`;
+      } else {
+        message = `${playerName} laid ${formatCardList(event.cards)}`;
+      }
     } else if (event.type === "draw") {
       message = `${playerName} drew ${event.count} ${event.count === 1 ? "card" : "cards"}`;
     } else if (event.type === "knock") {
@@ -545,7 +571,14 @@ function wireGameControls(settings, game, hand) {
     await gameRequest(`/api/game/${channelId}/dice/${encodeURIComponent(dieId)}/roll`, { playerId: currentPlayerId });
     await refreshGame(settings);
   };
-  document.querySelectorAll("[data-die-id]").forEach((dieButton) => dieButton.addEventListener("click", () => rollDie(dieButton.dataset.dieId)));
+  document.querySelectorAll("[data-die-id]").forEach((dieButton) => dieButton.addEventListener("click", (event) => {
+    if (dieButton.dataset.dragged === "true") {
+      delete dieButton.dataset.dragged;
+      event.preventDefault();
+      return;
+    }
+    rollDie(dieButton.dataset.dieId);
+  }));
   document.querySelector("#dice-add-button")?.addEventListener("click", () => {
     document.querySelector("#dice-dialog").showModal();
   });
@@ -593,35 +626,66 @@ function startPlayerHeartbeat() {
   heartbeatTimer = setInterval(heartbeat, 5000);
   window.addEventListener("beforeunload", () => {
     clearInterval(heartbeatTimer);
+    clearInterval(pollTimer); 
     fetch(playerUrl, { method: "DELETE", keepalive: true }).catch(() => {});
   }, { once: true });
 }
 
 function makeDieDraggable(die) {
-  let startX;
-  let startY;
-  let originX;
-  let originY;
+  const savedPosition = diePositions.get(die.dataset.dieId);
+  if (savedPosition) {
+    die.style.left = `${savedPosition.left}px`;
+    die.style.top = `${savedPosition.top}px`;
+    die.style.right = "auto";
+  }
+
+  let dragState = null;
   die.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
     event.stopPropagation();
-    startX = event.clientX;
-    startY = event.clientY;
-    originX = die.offsetLeft;
-    originY = die.offsetTop;
+    const bounds = die.getBoundingClientRect();
+    dragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: die.offsetLeft,
+      originY: die.offsetTop,
+      bounds,
+      moved: false,
+    };
     die.setPointerCapture(event.pointerId);
   });
   die.addEventListener("pointermove", (event) => {
-    if (!die.hasPointerCapture(event.pointerId)) return;
-    const nextLeft = originX + event.clientX - startX;
-    const nextTop = originY + event.clientY - startY;
-    const candidate = { left: nextLeft, top: nextTop, right: nextLeft + die.offsetWidth, bottom: nextTop + die.offsetHeight };
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+    if (!dragState.moved && Math.hypot(deltaX, deltaY) < 4) return;
+    dragState.moved = true;
+    const nextLeft = dragState.originX + deltaX;
+    const nextTop = dragState.originY + deltaY;
+    const candidate = {
+      left: dragState.bounds.left + deltaX,
+      top: dragState.bounds.top + deltaY,
+      right: dragState.bounds.right + deltaX,
+      bottom: dragState.bounds.bottom + deltaY,
+    };
     const blocked = [...document.querySelectorAll(".discard-panel, .draw-panel, .players-panel, .dice-panel")].some((panel) => {
-      const bounds = { left: panel.offsetLeft, top: panel.offsetTop, right: panel.offsetLeft + panel.offsetWidth, bottom: panel.offsetTop + panel.offsetHeight };
+      const bounds = panel.getBoundingClientRect();
       return candidate.left < bounds.right && candidate.right > bounds.left && candidate.top < bounds.bottom && candidate.bottom > bounds.top;
     });
     if (!blocked) {
       die.style.left = `${nextLeft}px`;
       die.style.top = `${nextTop}px`;
+      die.style.right = "auto";
+      diePositions.set(die.dataset.dieId, { left: nextLeft, top: nextTop });
     }
+  });
+  die.addEventListener("pointerup", (event) => {
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+    if (dragState.moved) die.dataset.dragged = "true";
+    dragState = null;
+  });
+  die.addEventListener("pointercancel", () => {
+    dragState = null;
   });
 }
