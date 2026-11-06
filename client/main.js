@@ -340,15 +340,15 @@ function renderCard(card, index = 0, interactive = true, cardOffset = index) {
 
   const cardTag = interactive ? "button" : "div";
   const cardAttributes = interactive ? ` data-card-id="${card.id}" type="button"` : "";
-  const imagePath = getCardImagePath(card);
-  const altText = card.faceDown ? "Kartenrückseite" : `${card.rank} ${card.suit}`;
+  const imagePath = getCardImagePath(card, true);
+  const altText = card.faceDown ? `${card.rank} ${card.suit}, Farbe invertiert` : `${card.rank} ${card.suit}`;
 
   return `<${cardTag} class="playing-card ${card.faceDown ? "face-down" : ""}"${cardAttributes} style="--card-index:${index};--card-offset:${cardOffset}" aria-label="${altText}"><img src="${imagePath}" alt="${altText}" /></${cardTag}>`;
 }
 
 function renderHandCardSlot(card, index) {
   if (!card) return `<button class="playing-card hand-card-slot is-empty" type="button" disabled aria-hidden="true"></button>`;
-  const altText = card.faceDown ? "Kartenrückseite" : `${card.rank} ${card.suit}`;
+  const altText = card.faceDown ? `${card.rank} ${card.suit}, Farbe invertiert` : `${card.rank} ${card.suit}`;
   return `<button class="playing-card hand-card-slot${card.faceDown ? " face-down" : ""}" type="button" data-card-id="${card.id}" aria-label="${altText}"><img src="${getCardImagePath(card, true)}" alt="${altText}" /></button>`;
 }
 
@@ -411,8 +411,9 @@ function wireGameControls(settings, game, hand) {
     const pageCards = hand.slice(handPage * 7, handPage * 7 + 7);
     handCards.forEach((card, index) => {
       const handCard = pageCards[index];
+      const isFaceDown = Boolean(handCard && (handCard.faceDown || cardStates.get(handCard.id) === "face-down"));
       card.classList.toggle("is-empty", !handCard);
-      card.classList.toggle("face-down", Boolean(handCard?.faceDown));
+      card.classList.toggle("face-down", isFaceDown);
       card.classList.toggle("selected", Boolean(handCard && cardStates.has(handCard.id)));
       card.disabled = !handCard;
       if (!handCard) {
@@ -421,10 +422,11 @@ function wireGameControls(settings, game, hand) {
         card.replaceChildren();
         return;
       }
-      const altText = handCard.faceDown ? "Kartenrückseite" : `${handCard.rank} ${handCard.suit}`;
+      const displayedCard = { ...handCard, faceDown: isFaceDown };
+      const altText = isFaceDown ? `${handCard.rank} ${handCard.suit}, Farbe invertiert` : `${handCard.rank} ${handCard.suit}`;
       card.dataset.cardId = handCard.id;
       card.setAttribute("aria-label", altText);
-      card.replaceChildren(Object.assign(document.createElement("img"), { src: getCardImagePath(handCard, true), alt: altText }));
+      card.replaceChildren(Object.assign(document.createElement("img"), { src: getCardImagePath(displayedCard, true), alt: altText }));
     });
     previousHandPage.disabled = handPage === 0;
     nextHandPage.disabled = (handPage + 1) * 7 >= hand.length;
