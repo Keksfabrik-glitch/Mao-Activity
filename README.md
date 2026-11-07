@@ -1,6 +1,6 @@
 # Discord Activity: Getting Started Guide
 
-This template is used in the [Building An Activity](https://discord.com/developers/docs/activities/building-an-activity) tutorial in the Discord Developer Docs.
+A template from the [Building An Activity](https://discord.com/developers/docs/activities/building-an-activity) tutorial in the Discord Developer Docs was used as the Foundation of this Project.
 
 Read more about building Discord Activities with the Embedded App SDK at [https://discord.com/developers/docs/activities/overview](https://discord.com/developers/docs/activities/overview).
 
@@ -29,3 +29,5 @@ ingress:
 
 Replace `mao.example.com`, `YOUR_USER`, and `TUNNEL_ID` with your values. After that, `Mao: Lokal starten` uses the same public URL every time.
 
+## ENV-File
+You have to fill the example.env file with your discord credentials and rename it to .env.
