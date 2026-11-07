@@ -299,5 +299,6 @@ button:focus-visible {
   .game-screen { width: 100vw; height: 100vh; overflow: auto; }
   .game-header { grid-template-columns: 1fr auto; }.game-header .player-profile { grid-column: 1 / -1; grid-row: 2; }
   .table-area { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }.discard-panel { grid-column: 1; transform: translateY(106px); }.draw-panel { grid-column: 2; transform: translateY(-106px); }.players-panel { display: none; }.hand-panel { grid-row: 3; }.knock-button { right: 1rem; bottom: 210px; }.free-space-label { display: none; }
-    .table-area { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }.discard-panel { grid-column: 1; transform: translateY(106px); }.draw-panel { grid-column: 2; transform: translateY(-106px); }.dice-panel, .board-die { display: none; }.players-panel { display: none; }.hand-panel { grid-row: 3; }.knock-button { right: 1rem; bottom: 210px; }.free-space-label { display: none; }
+  .dice-panel { display: none; }
+  .board-die { right: 12px; max-width: min(150px, calc(100vw - 24px)); }
 }
