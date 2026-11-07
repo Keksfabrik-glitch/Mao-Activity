@@ -157,7 +157,7 @@ async function startActivity() {
 
 async function loadGame(settings) {
   const response = await fetch(`/api/game/${encodeURIComponent(discordSdk.channelId)}?playerId=${encodeURIComponent(currentPlayerId)}&playerName=${encodeURIComponent(currentPlayerName)}`);
-  if (!response.ok) throw new Error("Spiel konnte nicht geladen werden.");
+  if (!response.ok) throw new Error("Could not load game.");
   const { game } = await response.json();
   window.currentGame = game;
   renderGameScreen(settings);
@@ -175,7 +175,7 @@ function startGamePolling(settings) {
         renderGameScreen(settings);
       }
     } catch (error) {
-      // Netzwerkfehler beim Polling ignorieren, nächster Versuch folgt automatisch
+      // Ignore polling network errors; the next attempt follows automatically.
     }
   }, 2000);
 }
@@ -308,13 +308,13 @@ function renderGameScreen(settings) {
     const playerNames = game.playerNames || {};
   document.querySelector("#app").innerHTML = `
     <main class="game-screen">
-      <button id="settings-button" class="settings-button" type="button">Einstellungen</button>
+      <button id="settings-button" class="settings-button" type="button">Settings</button>
       <section class="table-area">
-        <aside class="board-panel discard-panel"><button id="discard-pile-button" class="card-stage" type="button" aria-label="Ablagestapel anzeigen">${renderCard(game.discardPile.at(-1), 0, false)}</button></aside>
-        <section class="draw-panel board-panel"><button id="draw-stack-button" class="draw-stack" type="button" aria-label="Ziehstapel auswählen"><img class="card-back" src="${cardBackImage}" alt="Kartenrückseite" /><span id="draw-count">${game.drawPileCount} Karten</span><output id="draw-amount-value" class="draw-amount is-hidden" aria-live="polite">1</output></button></section>
-        ${settings?.dice ? `<aside class="board-panel dice-panel"><button id="dice-toggle" class="dice-heading" type="button"><strong>Würfel</strong></button><div id="dice-list" class="dice-list is-collapsed">${(game.dice || []).map((die) => `<button class="die-list-entry" type="button" data-die-id="${escapeHtml(die.id)}">${escapeHtml(die.name)}</button>`).join("")}</div><button id="dice-add-button" class="dice-add-button is-collapsed" type="button" aria-label="Würfel hinzufügen">+</button></aside>${(game.dice || []).map((die, index) => `<button class="board-die" type="button" data-die-id="${escapeHtml(die.id)}" style="--die-index:${index}" title="${escapeHtml(die.name)}">${escapeHtml(die.name)}</button>`).join("")}<dialog id="dice-dialog" class="dice-dialog"><form id="dice-form"><button id="dice-dialog-close" class="dialog-close" type="button" aria-label="Dialog schließen">x</button><h2>Würfel erstellen</h2><label for="dice-name">Name</label><input id="dice-name" name="name" required maxlength="40" placeholder="z. B. D20" /><label for="dice-type">Typ</label><select id="dice-type" name="type"><option value="coin">Münze</option><option value="d4">W4</option><option value="d6">W6</option><option value="d8">W8</option><option value="d10">W10</option><option value="d12">W12</option><option value="d20">W20</option>${settings.customDice ? '<option value="custom">Eigener Würfel</option>' : ""}</select><div id="custom-dice-fields" class="is-hidden"><label for="dice-sides">Seiten, getrennt durch Kommas</label><textarea id="dice-sides" name="sides" rows="4" placeholder="Ja,Nein,Vielleicht"></textarea></div><p id="dice-error" class="form-error" role="alert"></p><button class="confirm-button" type="submit">Bestätigen</button></form></dialog>` : ""}
-        <aside class="board-panel players-panel"><div id="player-list">${players.map(([id], index) => `<div class="player-row" data-player-id="${id}"><span>${index + 1}</span><span class="player-name">${id === currentPlayerId ? "Du" : escapeHtml(playerNames[id] || id)}<small class="player-card-count">${(game.players[id] || []).length}</small></span>${id === currentPlayerId ? "" : `<button class="give-player-button is-hidden" type="button" aria-label="Karten an ${escapeHtml(playerNames[id] || id)} geben">Geben</button>`}</div>`).join("")}</div>${renderHistory(game.history || [], playerNames)}</aside>
-        <section class="hand-panel"><div class="hand-heading"><button id="previous-hand-page" class="hand-page-button" type="button" aria-label="Vorherige sieben Karten">&#9664;</button><span id="hand-count">${hand.length} Karten</span><button id="next-hand-page" class="hand-page-button" type="button" aria-label="Nächste sieben Karten">&#9654;</button></div><div id="hand-cards" class="hand-cards">${Array.from({ length: 7 }, (_, index) => renderHandCardSlot(hand[index], index)).join("")}</div></section>
+        <aside class="board-panel discard-panel"><button id="discard-pile-button" class="card-stage" type="button" aria-label="Show discard pile">${renderCard(game.discardPile.at(-1), 0, false)}</button></aside>
+        <section class="draw-panel board-panel"><button id="draw-stack-button" class="draw-stack" type="button" aria-label="Select draw pile"><img class="card-back" src="${cardBackImage}" alt="Card back" /><span id="draw-count">${game.drawPileCount} ${game.drawPileCount === 1 ? "card" : "cards"}</span><output id="draw-amount-value" class="draw-amount is-hidden" aria-live="polite">1</output></button></section>
+        ${settings?.dice ? `<aside class="board-panel dice-panel"><button id="dice-toggle" class="dice-heading" type="button"><strong>Dice</strong></button><div id="dice-list" class="dice-list is-collapsed">${(game.dice || []).map((die) => `<button class="die-list-entry" type="button" data-die-id="${escapeHtml(die.id)}">${escapeHtml(die.name)}</button>`).join("")}</div><button id="dice-add-button" class="dice-add-button is-collapsed" type="button" aria-label="Add die">+</button></aside>${(game.dice || []).map((die, index) => `<button class="board-die" type="button" data-die-id="${escapeHtml(die.id)}" style="--die-index:${index}" title="${escapeHtml(die.name)}">${escapeHtml(die.name)}</button>`).join("")}<dialog id="dice-dialog" class="dice-dialog"><form id="dice-form"><button id="dice-dialog-close" class="dialog-close" type="button" aria-label="Close dialog">x</button><h2>Create a die</h2><label for="dice-name">Name</label><input id="dice-name" name="name" required maxlength="40" placeholder="e.g. D20" /><label for="dice-type">Type</label><select id="dice-type" name="type"><option value="coin">Coin</option><option value="d4">D4</option><option value="d6">D6</option><option value="d8">D8</option><option value="d10">D10</option><option value="d12">D12</option><option value="d20">D20</option>${settings.customDice ? '<option value="custom">Custom die</option>' : ""}</select><div id="custom-dice-fields" class="is-hidden"><label for="dice-sides">Sides, comma-separated</label><textarea id="dice-sides" name="sides" rows="4" placeholder="Yes,No,Maybe"></textarea></div><p id="dice-error" class="form-error" role="alert"></p><button class="confirm-button" type="submit">Confirm</button></form></dialog>` : ""}
+        <aside class="board-panel players-panel"><div id="player-list">${players.map(([id], index) => `<div class="player-row" data-player-id="${id}"><span>${index + 1}</span><span class="player-name">${id === currentPlayerId ? "You" : escapeHtml(playerNames[id] || id)}<small class="player-card-count">${(game.players[id] || []).length}</small></span>${id === currentPlayerId ? "" : `<button class="give-player-button is-hidden" type="button" aria-label="Give cards to ${escapeHtml(playerNames[id] || id)}">Give</button>`}</div>`).join("")}</div>${renderHistory(game.history || [], playerNames)}</aside>
+        <section class="hand-panel"><div class="hand-heading"><button id="previous-hand-page" class="hand-page-button" type="button" aria-label="Previous seven cards">&#9664;</button><span id="hand-count">${hand.length} ${hand.length === 1 ? "card" : "cards"}</span><button id="next-hand-page" class="hand-page-button" type="button" aria-label="Next seven cards">&#9654;</button></div><div id="hand-cards" class="hand-cards">${Array.from({ length: 7 }, (_, index) => renderHandCardSlot(hand[index], index)).join("")}</div></section>
         <button id="knock-button" class="knock-button" type="button">KNOCK</button>
       </section>
     </main>`;
@@ -336,19 +336,19 @@ function sortHand(hand) {
 }
 
 function renderCard(card, index = 0, interactive = true, cardOffset = index) {
-  if (!card) return `<div class="empty-card">Leer</div>`;
+  if (!card) return `<div class="empty-card">Empty</div>`;
 
   const cardTag = interactive ? "button" : "div";
   const cardAttributes = interactive ? ` data-card-id="${card.id}" type="button"` : "";
   const imagePath = getCardImagePath(card, true);
-  const altText = card.faceDown ? `${card.rank} ${card.suit}, Farbe invertiert` : `${card.rank} ${card.suit}`;
+  const altText = card.faceDown ? `${card.rank} ${card.suit}, color inverted` : `${card.rank} ${card.suit}`;
 
   return `<${cardTag} class="playing-card ${card.faceDown ? "face-down" : ""}"${cardAttributes} style="--card-index:${index};--card-offset:${cardOffset}" aria-label="${altText}"><img src="${imagePath}" alt="${altText}" /></${cardTag}>`;
 }
 
 function renderHandCardSlot(card, index) {
   if (!card) return `<button class="playing-card hand-card-slot is-empty" type="button" disabled aria-hidden="true"></button>`;
-  const altText = card.faceDown ? `${card.rank} ${card.suit}, Farbe invertiert` : `${card.rank} ${card.suit}`;
+  const altText = card.faceDown ? `${card.rank} ${card.suit}, color inverted` : `${card.rank} ${card.suit}`;
   return `<button class="playing-card hand-card-slot${card.faceDown ? " face-down" : ""}" type="button" data-card-id="${card.id}" aria-label="${altText}"><img src="${getCardImagePath(card, true)}" alt="${altText}" /></button>`;
 }
 
@@ -423,7 +423,7 @@ function wireGameControls(settings, game, hand) {
         return;
       }
       const displayedCard = { ...handCard, faceDown: isFaceDown };
-      const altText = isFaceDown ? `${handCard.rank} ${handCard.suit}, Farbe invertiert` : `${handCard.rank} ${handCard.suit}`;
+      const altText = isFaceDown ? `${handCard.rank} ${handCard.suit}, color inverted` : `${handCard.rank} ${handCard.suit}`;
       card.dataset.cardId = handCard.id;
       card.setAttribute("aria-label", altText);
       card.replaceChildren(Object.assign(document.createElement("img"), { src: getCardImagePath(displayedCard, true), alt: altText }));
@@ -459,7 +459,7 @@ function wireGameControls(settings, game, hand) {
   const updateDiscardCard = () => {
     const card = game.discardPile[discardIndex];
     discardPileButton.innerHTML = renderCard(card, 0, false);
-    discardPileButton.setAttribute("aria-label", card ? `Ablagestapel: ${card.rank} ${card.suit}` : "Ablagestapel leer");
+    discardPileButton.setAttribute("aria-label", card ? `Discard pile: ${card.rank} ${card.suit}` : "Discard pile empty");
   };
   const discard = async () => {
     const cardIds = [...cardStates.keys()];
@@ -595,7 +595,7 @@ function wireGameControls(settings, game, hand) {
     const diceForm = event.currentTarget;
     const form = new FormData(diceForm);
     const type = form.get("type");
-    const standardSides = { coin: ["Kopf", "Zahl"], d4: ["1", "2", "3", "4"], d6: ["1", "2", "3", "4", "5", "6"], d8: ["1", "2", "3", "4", "5", "6", "7", "8"], d10: Array.from({ length: 10 }, (_, index) => String(index + 1)), d12: Array.from({ length: 12 }, (_, index) => String(index + 1)), d20: Array.from({ length: 20 }, (_, index) => String(index + 1)) };
+    const standardSides = { coin: ["Heads", "Tails"], d4: ["1", "2", "3", "4"], d6: ["1", "2", "3", "4", "5", "6"], d8: ["1", "2", "3", "4", "5", "6", "7", "8"], d10: Array.from({ length: 10 }, (_, index) => String(index + 1)), d12: Array.from({ length: 12 }, (_, index) => String(index + 1)), d20: Array.from({ length: 20 }, (_, index) => String(index + 1)) };
     const sides = type === "custom" ? String(form.get("sides")).split(",").map((side) => side.trim()).filter(Boolean) : standardSides[type];
     try {
       await gameRequest(`/api/game/${channelId}/dice`, { playerId: currentPlayerId, name: form.get("name"), sides });
@@ -618,7 +618,7 @@ function wireGameControls(settings, game, hand) {
   });
 }
 
-async function gameRequest(url, body) { const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); if (!response.ok) throw new Error((await response.json()).error || "Spielaktion fehlgeschlagen"); return response.json(); }
+async function gameRequest(url, body) { const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); if (!response.ok) throw new Error((await response.json()).error || "Game action failed"); return response.json(); }
 async function refreshGame(settings) { await loadGame(settings); }
 function startPlayerHeartbeat() {
   const playerUrl = `/api/game/${encodeURIComponent(discordSdk.channelId)}/players/${encodeURIComponent(currentPlayerId)}`;
@@ -646,13 +646,15 @@ function makeDieDraggable(die) {
     if (event.button !== 0) return;
     event.stopPropagation();
     const bounds = die.getBoundingClientRect();
+    const boardBounds = die.parentElement.getBoundingClientRect();
     dragState = {
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      originX: die.offsetLeft,
-      originY: die.offsetTop,
+      originX: bounds.left - boardBounds.left,
+      originY: bounds.top - boardBounds.top,
       bounds,
+      boardBounds,
       moved: false,
     };
     die.setPointerCapture(event.pointerId);
@@ -663,24 +665,14 @@ function makeDieDraggable(die) {
     const deltaY = event.clientY - dragState.startY;
     if (!dragState.moved && Math.hypot(deltaX, deltaY) < 4) return;
     dragState.moved = true;
-    const nextLeft = dragState.originX + deltaX;
-    const nextTop = dragState.originY + deltaY;
-    const candidate = {
-      left: dragState.bounds.left + deltaX,
-      top: dragState.bounds.top + deltaY,
-      right: dragState.bounds.right + deltaX,
-      bottom: dragState.bounds.bottom + deltaY,
-    };
-    const blocked = [...document.querySelectorAll(".discard-panel, .draw-panel, .players-panel, .dice-panel")].some((panel) => {
-      const bounds = panel.getBoundingClientRect();
-      return candidate.left < bounds.right && candidate.right > bounds.left && candidate.top < bounds.bottom && candidate.bottom > bounds.top;
-    });
-    if (!blocked) {
-      die.style.left = `${nextLeft}px`;
-      die.style.top = `${nextTop}px`;
-      die.style.right = "auto";
-      diePositions.set(die.dataset.dieId, { left: nextLeft, top: nextTop });
-    }
+    const maxLeft = dragState.boardBounds.width - dragState.bounds.width;
+    const maxTop = dragState.boardBounds.height - dragState.bounds.height;
+    const nextLeft = Math.max(0, Math.min(maxLeft, dragState.originX + deltaX));
+    const nextTop = Math.max(0, Math.min(maxTop, dragState.originY + deltaY));
+    die.style.left = `${nextLeft}px`;
+    die.style.top = `${nextTop}px`;
+    die.style.right = "auto";
+    diePositions.set(die.dataset.dieId, { left: nextLeft, top: nextTop });
   });
   die.addEventListener("pointerup", (event) => {
     if (!dragState || dragState.pointerId !== event.pointerId) return;
