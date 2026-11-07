@@ -14,6 +14,8 @@ export class MaoGame {
     this.knockCounts = new Map();
     this.knockHistory = new Map();
     this.knockTimers = new Map();
+    this.counterChangeHistory = new Map();
+    this.counterChangeTimers = new Map();
     this.dice = [];
     this.nextDieId = 1;
     this.counters = [];
@@ -22,7 +24,7 @@ export class MaoGame {
     this.discardPile = [this.drawPile.pop()];
   }
 
-  addCounter(name, increment, decrement, minimum, maximum, showLimits) {
+  addCounter(playerId, name, increment, decrement, minimum, maximum, showLimits, startingValue = null) {
     if (typeof name !== "string" || name.trim().length === 0 || name.trim().length > 40) {
       throw new Error("A counter name is required and must be at most 40 characters");
     }
@@ -41,31 +43,67 @@ export class MaoGame {
     if (minimum != null && maximum != null && minimum > maximum) {
       throw new Error("Counter minimum must not exceed its maximum");
     }
+    if (startingValue != null && !Number.isSafeInteger(startingValue)) {
+      throw new Error("Counter starting value must be a safe integer or null");
+    }
+    const initialValue = startingValue ?? minimum ?? 0;
+    if ((minimum != null && initialValue < minimum) || (maximum != null && initialValue > maximum)) {
+      throw new Error("Counter starting value must be within its minimum and maximum");
+    }
+    this.addPlayer(playerId);
     const counter = {
       id: `counter-${this.nextCounterId++}`,
       name: name.trim(),
-      value: 0,
+      value: initialValue,
       increment,
       decrement,
       minimum: minimum ?? null,
       maximum: maximum ?? null,
+      startingValue: initialValue,
       showLimits: Boolean(showLimits),
     };
-    counter.value = this.clampCounterValue(counter, counter.minimum ?? 0);
     this.counters.push(counter);
+    this.addHistory({ type: "counter-add", playerId, counterId: counter.id, counterName: counter.name });
     return counter;
   }
 
-  updateCounter(counterId, action) {
+  updateCounter(counterId, action, playerId) {
     const counter = this.counters.find((item) => item.id === counterId);
     if (!counter) throw new Error("Counter not found");
+    this.addPlayer(playerId);
     let value = counter.value;
     if (action === "increment") value += counter.increment;
     else if (action === "decrement") value -= counter.decrement;
-    else if (action === "reset") value = counter.minimum ?? 0;
+    else if (action === "reset") value = counter.startingValue ?? counter.minimum ?? 0;
     else throw new Error("Unknown counter action");
-    counter.value = this.clampCounterValue(counter, value);
+    const updatedValue = this.clampCounterValue(counter, value);
+    if (updatedValue !== counter.value) {
+      counter.value = updatedValue;
+      this.recordCounterChange(playerId, counter);
+    }
     return counter.value;
+  }
+
+  recordCounterChange(playerId, counter) {
+    const key = JSON.stringify([playerId, counter.id]);
+    const historyEvent = this.counterChangeHistory.get(key)
+      || this.addHistory({
+        type: "counter-change",
+        playerId,
+        counterId: counter.id,
+        counterName: counter.name,
+        count: 0,
+        value: counter.value,
+      });
+    historyEvent.count += 1;
+    historyEvent.value = counter.value;
+    this.counterChangeHistory.set(key, historyEvent);
+    const timer = this.counterChangeTimers.get(key);
+    if (timer) clearTimeout(timer);
+    this.counterChangeTimers.set(key, setTimeout(() => {
+      this.counterChangeHistory.delete(key);
+      this.counterChangeTimers.delete(key);
+    }, KNOCK_WINDOW_MS));
   }
 
   clampCounterValue(counter, value) {

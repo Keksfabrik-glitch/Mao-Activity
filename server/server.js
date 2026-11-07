@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS = {
   dice: true,
   customDice: true,
   faceDownCardsPlayable: true,
+  counters: true,
 };
 
 function loadSettings() {
@@ -112,6 +113,7 @@ function saveSettings(channelId, settings, res) {
     dice: Boolean(settings.dice),
     customDice: Boolean(settings.customDice),
     faceDownCardsPlayable: Boolean(settings.faceDownCardsPlayable),
+    counters: Boolean(settings.counters),
   };
 
   gameSettings[channelId] = savedSettings;
@@ -160,12 +162,14 @@ app.post("/api/game/:channelId/counters", (req, res) => {
   }
   try {
     const counter = game.addCounter(
+      req.body.playerId,
       req.body.name,
       req.body.increment,
       req.body.decrement,
       req.body.minimum,
       req.body.maximum,
       req.body.showLimits,
+      req.body.startingValue,
     );
     res.send({ counter, game: game.snapshot() });
   } catch (error) {
@@ -179,7 +183,7 @@ app.post("/api/game/:channelId/counters/:counterId/:action", (req, res) => {
     return res.status(404).send({ error: "No settings exist for this voice channel" });
   }
   try {
-    const value = game.updateCounter(req.params.counterId, req.params.action);
+    const value = game.updateCounter(req.params.counterId, req.params.action, req.body.playerId);
     res.send({ value, game: game.snapshot() });
   } catch (error) {
     res.status(400).send({ error: error.message });
