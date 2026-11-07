@@ -76,15 +76,16 @@ export class MaoGame {
     else if (action === "decrement") value -= counter.decrement;
     else if (action === "reset") value = counter.startingValue ?? counter.minimum ?? 0;
     else throw new Error("Unknown counter action");
+    const previousValue = counter.value;
     const updatedValue = this.clampCounterValue(counter, value);
     if (updatedValue !== counter.value) {
       counter.value = updatedValue;
-      this.recordCounterChange(playerId, counter);
+      this.recordCounterChange(playerId, counter, previousValue);
     }
     return counter.value;
   }
 
-  recordCounterChange(playerId, counter) {
+  recordCounterChange(playerId, counter, previousValue) {
     const key = JSON.stringify([playerId, counter.id]);
     const historyEvent = this.counterChangeHistory.get(key)
       || this.addHistory({
@@ -92,10 +93,9 @@ export class MaoGame {
         playerId,
         counterId: counter.id,
         counterName: counter.name,
-        count: 0,
+        fromValue: previousValue,
         value: counter.value,
       });
-    historyEvent.count += 1;
     historyEvent.value = counter.value;
     this.counterChangeHistory.set(key, historyEvent);
     const timer = this.counterChangeTimers.get(key);
@@ -205,6 +205,7 @@ export class MaoGame {
     }
     const die = { id: `die-${this.nextDieId++}`, name: name.trim(), sides: sides.map((side) => side.trim()), createdBy: playerId };
     this.dice.push(die);
+    this.addHistory({ type: "die-add", playerId, dieId: die.id, dieName: die.name });
     return die;
   }
 

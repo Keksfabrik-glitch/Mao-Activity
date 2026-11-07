@@ -405,7 +405,9 @@ function renderHistory(history, playerNames) {
     } else if (event.type === "counter-add") {
       message = `${playerName} added counter ${event.counterName}`;
     } else if (event.type === "counter-change") {
-      message = `${playerName} changed ${event.counterName} ${event.count} ${event.count === 1 ? "time" : "times"} (now ${event.value})`;
+      message = `${playerName} changed ${event.counterName} from ${event.fromValue} to ${event.value}`;
+    } else if (event.type === "die-add") {
+      message = `${playerName} added die ${event.dieName}`;
     } else if (event.type === "roll") {
       message = `${playerName} rolled ${event.dieName} and got ${event.result}`;
     } else {
