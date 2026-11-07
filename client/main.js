@@ -697,7 +697,26 @@ function wireGameControls(settings, game, hand) {
   });
 }
 
-async function gameRequest(url, body) { const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); if (!response.ok) throw new Error((await response.json()).error || "Game action failed"); return response.json(); }
+async function gameRequest(url, body) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const responseText = await response.text();
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    if (responseText.trimStart().startsWith("<")) {
+      throw new Error(`The game server returned an HTML page (HTTP ${response.status}). Restart or update the Mao server, then try again.`);
+    }
+    throw new Error(`The game server returned an invalid response (HTTP ${response.status}).`);
+  }
+  if (!response.ok) throw new Error(result.error || `Game action failed (HTTP ${response.status}).`);
+  return result;
+}
 async function refreshGame(settings) { await loadGame(settings); }
 function startPlayerHeartbeat() {
   const playerUrl = `/api/game/${encodeURIComponent(discordSdk.channelId)}/players/${encodeURIComponent(currentPlayerId)}`;

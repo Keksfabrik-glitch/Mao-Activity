@@ -315,6 +315,10 @@ app.post("/api/token", async (req, res) => {
   res.send({access_token});
 });
 
+app.use("/api", (req, res) => {
+  res.status(404).send({ error: "API endpoint not found" });
+});
+
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
