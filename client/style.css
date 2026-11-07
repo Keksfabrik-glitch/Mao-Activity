@@ -99,6 +99,12 @@ h1 {
   margin: 0.6rem 0;
 }
 
+.settings-hint {
+  margin: 0;
+  color: #bdbdbd;
+  font-size: 0.85rem;
+}
+
 .toggle-option {
   display: flex;
   align-items: center;
@@ -157,6 +163,7 @@ h1 {
 }
 
 .game-screen {
+  position: relative;
   width: min(100vw, calc(100vh * 16 / 9));
   height: min(100vh, calc(100vw * 9 / 16));
   min-height: 0;
@@ -165,6 +172,134 @@ h1 {
   background: radial-gradient(circle at 50% 45%, #29483f 0%, #18352f 45%, #10251f 100%);
   color: #eef3f8;
   overflow: hidden;
+}
+
+.counters-panel {
+  position: absolute;
+  top: 8rem;
+  right: 0.5rem;
+  z-index: 6;
+  width: 180px;
+  box-sizing: border-box;
+}
+
+.counters-heading {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.counters-heading button {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #405263;
+  border-radius: 6px;
+  background: #293746;
+  color: #d9e4eb;
+}
+
+.counters-heading #counters-toggle {
+  flex: 1;
+  text-align: left;
+}
+
+.counters-heading #counter-add-button {
+  color: #84d3c5;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.counter-list {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 6rem;
+  margin-top: 0.4rem;
+  padding: 0.4rem;
+  border: 1px solid #405263;
+  border-radius: 6px;
+  background: #182530eF;
+  color: #d9e4eb;
+  font-size: 0.8rem;
+  overflow-y: auto;
+}
+
+.counter-list.is-collapsed {
+  display: none;
+}
+
+.board-counter {
+  position: absolute;
+  top: calc(3rem + var(--counter-index) * 7rem);
+  left: calc(50% + 155px);
+  z-index: 5;
+  width: 180px;
+  box-sizing: border-box;
+  padding: 0.55rem;
+  border: 1px solid #405263;
+  border-radius: 8px;
+  background: #182530eF;
+  text-align: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.board-counter h2 {
+  margin: 0;
+  color: #d9e4eb;
+  font-size: 0.85rem;
+  cursor: grab;
+}
+
+.board-counter:active h2 {
+  cursor: grabbing;
+}
+
+.counter-value {
+  display: block;
+  color: #84d3c5;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.counter-limits {
+  margin: 0.2rem 0 0.4rem;
+  color: #91a1b0;
+  font-size: 0.7rem;
+}
+
+.counter-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+}
+
+.counter-controls button {
+  padding: 0.3rem 0.45rem;
+  border: 1px solid #405263;
+  border-radius: 6px;
+  background: #293746;
+  color: #d9e4eb;
+  font-size: 0.8rem;
+  touch-action: manipulation;
+}
+
+.counter-controls .counter-reset {
+  color: #aebac5;
+  font-size: 0.7rem;
+}
+
+.counter-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.counter-error {
+  min-height: 0;
+  margin: 0;
+  color: #ff8b8b;
+  font-size: 0.75rem;
+  user-select: text;
 }
 
 .game-header {
@@ -300,5 +435,7 @@ button:focus-visible {
   .game-header { grid-template-columns: 1fr auto; }.game-header .player-profile { grid-column: 1 / -1; grid-row: 2; }
   .table-area { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; }.discard-panel { grid-column: 1; transform: translateY(106px); }.draw-panel { grid-column: 2; transform: translateY(-106px); }.players-panel { display: none; }.hand-panel { grid-row: 3; }.knock-button { right: 1rem; bottom: 210px; }.free-space-label { display: none; }
   .dice-panel { display: none; }
+  .counters-panel { top: 0.5rem; right: 0.5rem; width: min(180px, 42vw); }
+  .board-counter { left: auto; right: 12px; }
   .board-die { right: 12px; max-width: min(150px, calc(100vw - 24px)); }
 }

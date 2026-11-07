@@ -16,8 +16,64 @@ export class MaoGame {
     this.knockTimers = new Map();
     this.dice = [];
     this.nextDieId = 1;
+    this.counters = [];
+    this.nextCounterId = 1;
     this.drawPile = shuffle(createDeck(cardSets));
     this.discardPile = [this.drawPile.pop()];
+  }
+
+  addCounter(name, increment, decrement, minimum, maximum, showLimits) {
+    if (typeof name !== "string" || name.trim().length === 0 || name.trim().length > 40) {
+      throw new Error("A counter name is required and must be at most 40 characters");
+    }
+    if (!Number.isInteger(increment) || increment < 1 || increment > 1000000) {
+      throw new Error("Counter increment must be between 1 and 1000000");
+    }
+    if (!Number.isInteger(decrement) || decrement < 1 || decrement > 1000000) {
+      throw new Error("Counter decrement must be between 1 and 1000000");
+    }
+    if (minimum != null && !Number.isSafeInteger(minimum)) {
+      throw new Error("Counter minimum must be a safe integer or null");
+    }
+    if (maximum != null && !Number.isSafeInteger(maximum)) {
+      throw new Error("Counter maximum must be a safe integer or null");
+    }
+    if (minimum != null && maximum != null && minimum > maximum) {
+      throw new Error("Counter minimum must not exceed its maximum");
+    }
+    const counter = {
+      id: `counter-${this.nextCounterId++}`,
+      name: name.trim(),
+      value: 0,
+      increment,
+      decrement,
+      minimum: minimum ?? null,
+      maximum: maximum ?? null,
+      showLimits: Boolean(showLimits),
+    };
+    counter.value = this.clampCounterValue(counter, counter.minimum ?? 0);
+    this.counters.push(counter);
+    return counter;
+  }
+
+  updateCounter(counterId, action) {
+    const counter = this.counters.find((item) => item.id === counterId);
+    if (!counter) throw new Error("Counter not found");
+    let value = counter.value;
+    if (action === "increment") value += counter.increment;
+    else if (action === "decrement") value -= counter.decrement;
+    else if (action === "reset") value = counter.minimum ?? 0;
+    else throw new Error("Unknown counter action");
+    counter.value = this.clampCounterValue(counter, value);
+    return counter.value;
+  }
+
+  clampCounterValue(counter, value) {
+    const boundedValue = Math.min(counter.maximum ?? value, Math.max(counter.minimum ?? value, value));
+    if (!Number.isSafeInteger(boundedValue)) {
+      throw new Error("Counter value exceeds the supported range");
+    }
+    return boundedValue;
   }
 
   addPlayer(playerId, playerName = null) {
@@ -195,6 +251,7 @@ export class MaoGame {
       playerNames: Object.fromEntries(this.playerNames),
       history: [...this.history],
       dice: this.dice.map((die) => ({ ...die, sides: [...die.sides] })),
+      counters: this.counters.map((counter) => ({ ...counter })),
       players: Object.fromEntries(
         [...this.players].map(([playerId, hand]) => [playerId, [...hand]])
       ),

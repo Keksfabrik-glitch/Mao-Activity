@@ -19,7 +19,6 @@ const DEFAULT_SETTINGS = {
   taxesMinimum: 15,
   dice: true,
   customDice: true,
-  counter: true,
   faceDownCardsPlayable: true,
 };
 
@@ -112,7 +111,6 @@ function saveSettings(channelId, settings, res) {
     taxesMinimum: settings.taxesMinimum,
     dice: Boolean(settings.dice),
     customDice: Boolean(settings.customDice),
-    counter: Boolean(settings.counter),
     faceDownCardsPlayable: Boolean(settings.faceDownCardsPlayable),
   };
 
@@ -121,7 +119,7 @@ function saveSettings(channelId, settings, res) {
     savedSettings.cardSets,
     savedSettings.faceDownCardsPlayable,
     savedSettings.taxes,
-    savedSettings.taxesMinimum,
+    savedSettings.taxesMinimum
   ));
   persistSettings();
   res.send({ settings: savedSettings });
@@ -137,7 +135,7 @@ function getGame(channelId) {
       settings.cardSets,
       settings.faceDownCardsPlayable,
       settings.taxes,
-      settings.taxesMinimum,
+      settings.taxesMinimum
     ));
   }
   return games.get(channelId);
@@ -153,6 +151,39 @@ app.get("/api/game/:channelId", (req, res) => {
       game.addPlayer(req.query.playerId, req.query.playerName);
   }
   res.send({ game: game.snapshot() });
+});
+
+app.post("/api/game/:channelId/counters", (req, res) => {
+  const game = getGame(req.params.channelId);
+  if (!game) {
+    return res.status(404).send({ error: "No settings exist for this voice channel" });
+  }
+  try {
+    const counter = game.addCounter(
+      req.body.name,
+      req.body.increment,
+      req.body.decrement,
+      req.body.minimum,
+      req.body.maximum,
+      req.body.showLimits,
+    );
+    res.send({ counter, game: game.snapshot() });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
+app.post("/api/game/:channelId/counters/:counterId/:action", (req, res) => {
+  const game = getGame(req.params.channelId);
+  if (!game) {
+    return res.status(404).send({ error: "No settings exist for this voice channel" });
+  }
+  try {
+    const value = game.updateCounter(req.params.counterId, req.params.action);
+    res.send({ value, game: game.snapshot() });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
 });
 
 app.post("/api/game/:channelId/players/:playerId/heartbeat", (req, res) => {
