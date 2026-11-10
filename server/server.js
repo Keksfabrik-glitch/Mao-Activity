@@ -296,6 +296,19 @@ app.post("/api/game/:channelId/discard", (req, res) => {
   }
 });
 
+app.post("/api/game/:channelId/return-cards", (req, res) => {
+  const game = getGame(req.params.channelId);
+  if (!game) {
+    return res.status(404).send({ error: "No settings exist for this voice channel" });
+  }
+  try {
+    const cards = game.returnCards(req.body.playerId, req.body.cardIds);
+    res.send({ cards, game: game.snapshot() });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
 app.post("/api/token", async (req, res) => {
   
   // Exchange the code for an access_token

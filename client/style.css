@@ -386,8 +386,9 @@ h1 {
 .dice-dialog input, .dice-dialog select, .dice-dialog textarea { width: 100%; box-sizing: border-box; border: 1px solid #405263; border-radius: 5px; padding: 0.55rem; background: #182530; color: #eef3f8; font: inherit; }
 .dialog-close { justify-self: end; padding: 0.2rem 0.5rem; }
 .confirm-button { margin-top: 0.5rem; background: #84d3c5; color: #10251f; }
+.player-entry { position: relative; }
 .player-row { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; margin-top: 0.75rem; padding: 0.65rem; border: 1px solid #405263; border-radius: 6px; background: #293746; color: inherit; box-sizing: border-box; }
-.give-player-button { margin-left: auto; padding: 0.35rem 0.55rem; border-color: #405263; background: transparent; color: #9edbd1; font-size: 0.75rem; }
+.give-player-button { position: absolute; top: 50%; left: calc(100% + 0.35rem); z-index: 6; transform: translateY(-50%); padding: 0.35rem 0.55rem; border: 1px solid #84d3c5; border-radius: 6px; background: #202d39; color: #9edbd1; font-size: 0.75rem; cursor: pointer; }
 .give-player-button.is-hidden { display: none; }
 .players-panel { grid-column: 1; grid-row: 1; }
 .game-history { display: grid; gap: 0.35rem; min-height: 2.4rem; max-height: 180px; margin-top: 1rem; padding: 0.35rem; border: 1px solid #405263; border-radius: 6px; background: #182530; overflow-y: auto; }

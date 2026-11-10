@@ -167,6 +167,17 @@ export class MaoGame {
     return cards;
   }
 
+  returnCards(playerId, cardIds) {
+    this.addPlayer(playerId);
+    const cards = takeCards(this.discardPile, cardIds, "the discard pile");
+    const returnedIds = new Set(cardIds);
+    this.discardPile = this.discardPile.filter((card) => !returnedIds.has(card.id));
+    this.players.get(playerId).push(...cards);
+    this.resetKnocks();
+    this.addHistory({ type: "return", playerId, count: cards.length, cards });
+    return cards;
+  }
+
   knock(playerId) {
     this.addPlayer(playerId);
     const count = (this.knockCounts.get(playerId) || 0) + 1;
@@ -314,13 +325,13 @@ export function createDeck(cardSets) {
   ).flat();
 }
 
-function takeCards(hand, cardIds) {
+function takeCards(hand, cardIds, location = "the player's hand") {
   if (!Array.isArray(cardIds) || cardIds.length === 0 || new Set(cardIds).size !== cardIds.length) {
     throw new Error("cardIds must be a non-empty array without duplicates");
   }
   const cards = cardIds.map((cardId) => hand.find((card) => card.id === cardId));
   if (cards.some((card) => card == null)) {
-    throw new Error("One or more cards are not in the player's hand");
+    throw new Error(`One or more cards are not in ${location}`);
   }
   return cards;
 }
