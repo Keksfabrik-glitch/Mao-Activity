@@ -35,6 +35,33 @@ let currentPlayerName;
 let heartbeatTimer;
 let pollTimer;
 const boardItemPositions = new Map();
+let activeBoardDrag = null;
+
+window.addEventListener("pointermove", (event) => {
+  if (!activeBoardDrag || activeBoardDrag.pointerId !== event.pointerId) return;
+  const deltaX = event.clientX - activeBoardDrag.startX;
+  const deltaY = event.clientY - activeBoardDrag.startY;
+  if (!activeBoardDrag.moved && Math.hypot(deltaX, deltaY) < 4) return;
+  activeBoardDrag.moved = true;
+  const maxLeft = activeBoardDrag.boardBounds.width - activeBoardDrag.bounds.width;
+  const maxTop = activeBoardDrag.boardBounds.height - activeBoardDrag.bounds.height;
+  const nextLeft = Math.max(0, Math.min(maxLeft, activeBoardDrag.originX + deltaX));
+  const nextTop = Math.max(0, Math.min(maxTop, activeBoardDrag.originY + deltaY));
+  activeBoardDrag.item.style.left = `${nextLeft}px`;
+  activeBoardDrag.item.style.top = `${nextTop}px`;
+  activeBoardDrag.item.style.right = "auto";
+  boardItemPositions.set(activeBoardDrag.itemId, { left: nextLeft, top: nextTop });
+});
+
+window.addEventListener("pointerup", (event) => {
+  if (!activeBoardDrag || activeBoardDrag.pointerId !== event.pointerId) return;
+  if (activeBoardDrag.moved) activeBoardDrag.item.dataset.dragged = "true";
+  activeBoardDrag = null;
+});
+
+window.addEventListener("pointercancel", (event) => {
+  if (activeBoardDrag?.pointerId === event.pointerId) activeBoardDrag = null;
+});
 
 const discordSdk = new DiscordSDK(import.meta.env.VITE_DISCORD_CLIENT_ID);
 
@@ -315,14 +342,14 @@ function renderGameScreen(settings) {
           ${settings?.counters !== false ? `<button id="counters-toggle" class="toolbar-button" type="button" aria-expanded="false" aria-controls="counter-list">Counters</button>` : ""}
         </nav>
         <div class="toolbar-panels">
-          ${settings?.dice ? `<aside class="dice-panel"><div id="dice-list" class="dice-list is-collapsed">${(game.dice || []).map((die) => `<button class="die-list-entry" type="button" data-die-id="${escapeHtml(die.id)}">${escapeHtml(die.name)}</button>`).join("")}</div><button id="dice-add-button" class="dice-add-button is-collapsed" type="button">+ Add die</button></aside>` : ""}
+          ${settings?.dice ? `<aside class="dice-panel"><div id="dice-list" class="dice-list is-collapsed">${(game.dice || []).map((die) => `<button class="die-list-entry" type="button" data-die-entry-id="${escapeHtml(die.id)}">${escapeHtml(die.name)}</button>`).join("")}</div><button id="dice-add-button" class="dice-add-button is-collapsed" type="button">+ Add die</button></aside>` : ""}
           ${settings?.counters !== false ? `<aside class="counters-panel"><div id="counter-list" class="counter-list is-collapsed">${(game.counters || []).map((counter) => `<span>${escapeHtml(counter.name)}</span>`).join("")}<button id="counter-add-button" class="counter-add-button" type="button">+ Add counter</button></div></aside>` : ""}
         </div>
       </aside>
       <section class="table-area">
           <aside class="board-panel discard-panel"><button id="discard-pile-button" class="card-stage" type="button" aria-label="Show discard pile">${renderCard(game.discardPile.at(-1), 0, false)}</button></aside>
           <section class="draw-panel board-panel"><button id="draw-stack-button" class="draw-stack" type="button" aria-label="Select draw pile"><img class="card-back" src="${cardBackImage}" alt="Card back" /><span id="draw-count">${game.drawPileCount} ${game.drawPileCount === 1 ? "card" : "cards"}</span><output id="draw-amount-value" class="draw-amount is-hidden" aria-live="polite">1</output></button></section>
-          ${settings?.dice ? `${(game.dice || []).map((die, index) => `<button class="board-die" type="button" data-die-id="${escapeHtml(die.id)}" style="--die-index:${index}" title="${escapeHtml(die.name)}">${escapeHtml(die.name)}</button>`).join("")}<dialog id="dice-dialog" class="dice-dialog"><form id="dice-form"><button id="dice-dialog-close" class="dialog-close" type="button" aria-label="Close dialog">x</button><h2>Create a die</h2><label for="dice-name">Name</label><input id="dice-name" name="name" required maxlength="40" placeholder="e.g. D20" /><label for="dice-type">Type</label><select id="dice-type" name="type"><option value="coin">Coin</option><option value="d4">D4</option><option value="d6">D6</option><option value="d8">D8</option><option value="d10">D10</option><option value="d12">D12</option><option value="d20">D20</option>${settings.customDice ? '<option value="custom">Custom die</option>' : ""}</select><div id="custom-dice-fields" class="is-hidden"><label for="dice-sides">Sides, comma-separated</label><textarea id="dice-sides" name="sides" rows="4" placeholder="Yes,No,Maybe"></textarea></div><p id="dice-error" class="form-error" role="alert"></p><button class="confirm-button" type="submit">Confirm</button></form></dialog>` : ""}
+          ${settings?.dice ? `${(game.dice || []).map((die, index) => `<button class="board-die" type="button" data-board-die-id="${escapeHtml(die.id)}" style="--die-top:${2 + index * 3.25}rem" title="${escapeHtml(die.name)}">${escapeHtml(die.name)}</button>`).join("")}<dialog id="dice-dialog" class="dice-dialog"><form id="dice-form"><button id="dice-dialog-close" class="dialog-close" type="button" aria-label="Close dialog">x</button><h2>Create a die</h2><label for="dice-name">Name</label><input id="dice-name" name="name" required maxlength="40" placeholder="e.g. D20" /><label for="dice-type">Type</label><select id="dice-type" name="type"><option value="coin">Coin</option><option value="d4">D4</option><option value="d6">D6</option><option value="d8">D8</option><option value="d10">D10</option><option value="d12">D12</option><option value="d20">D20</option>${settings.customDice ? '<option value="custom">Custom die</option>' : ""}</select><div id="custom-dice-fields" class="is-hidden"><label for="dice-sides">Sides, comma-separated</label><textarea id="dice-sides" name="sides" rows="4" placeholder="Yes,No,Maybe"></textarea></div><p id="dice-error" class="form-error" role="alert"></p><button class="confirm-button" type="submit">Confirm</button></form></dialog>` : ""}
           ${settings?.counters !== false ? `${(game.counters || []).map(renderCounterWidget).join("")}<dialog id="counter-dialog" class="dice-dialog"><form id="counter-form"><button id="counter-dialog-close" class="dialog-close" type="button" aria-label="Close dialog">x</button><h2>Create a counter</h2><label for="counter-name">Name</label><input id="counter-name" name="name" required maxlength="40" placeholder="e.g. Score" /><label for="counter-increment">Increase by</label><input id="counter-increment" name="increment" type="number" min="1" max="1000000" required value="1" /><label for="counter-decrement">Decrease by</label><input id="counter-decrement" name="decrement" type="number" min="1" max="1000000" required value="1" /><label for="counter-starting-value">Starting value (optional)</label><input id="counter-starting-value" name="startingValue" type="number" min="-9007199254740991" max="9007199254740991" /><label for="counter-minimum">Minimum (optional)</label><input id="counter-minimum" name="minimum" type="number" min="-9007199254740991" max="9007199254740991" /><label for="counter-maximum">Maximum (optional)</label><input id="counter-maximum" name="maximum" type="number" min="-9007199254740991" max="9007199254740991" />${renderToggle("counter-show-limits", "Show maximum beside value", true)}<p class="settings-hint">Reset returns to the starting value, or to the minimum (or 0) if no starting value is set.</p><p id="counter-create-error" class="form-error" role="alert"></p><button class="confirm-button" type="submit">Create counter</button></form></dialog>` : ""}
         <aside class="board-panel players-panel"><div id="player-list">${players.map(([id], index) => `<div class="player-row" data-player-id="${id}"><span>${index + 1}</span><span class="player-name">${id === currentPlayerId ? "You" : escapeHtml(playerNames[id] || id)}<small class="player-card-count">${(game.players[id] || []).length}</small></span>${id === currentPlayerId ? "" : `<button class="give-player-button is-hidden" type="button" aria-label="Give cards to ${escapeHtml(playerNames[id] || id)}">Give</button>`}</div>`).join("")}</div>${renderHistory(game.history || [], playerNames)}</aside>
         <section class="hand-panel"><div class="hand-heading"><button id="previous-hand-page" class="hand-page-button" type="button" aria-label="Previous seven cards">&#9664;</button><span id="hand-count">${hand.length} ${hand.length === 1 ? "card" : "cards"}</span><button id="next-hand-page" class="hand-page-button" type="button" aria-label="Next seven cards">&#9654;</button></div><div id="hand-cards" class="hand-cards">${Array.from({ length: 7 }, (_, index) => renderHandCardSlot(hand[index], index)).join("")}</div></section>
@@ -661,13 +688,16 @@ function wireGameControls(settings, game, hand) {
     await gameRequest(`/api/game/${channelId}/dice/${encodeURIComponent(dieId)}/roll`, { playerId: currentPlayerId });
     await refreshGame(settings);
   };
-  document.querySelectorAll("[data-die-id]").forEach((dieButton) => dieButton.addEventListener("click", (event) => {
+  document.querySelectorAll(".board-die").forEach((dieButton) => dieButton.addEventListener("click", (event) => {
     if (dieButton.dataset.dragged === "true") {
       delete dieButton.dataset.dragged;
       event.preventDefault();
       return;
     }
-    rollDie(dieButton.dataset.dieId);
+    rollDie(dieButton.dataset.boardDieId);
+  }));
+  document.querySelectorAll(".die-list-entry").forEach((dieButton) => dieButton.addEventListener("click", () => {
+    rollDie(dieButton.dataset.dieEntryId);
   }));
   document.querySelector("#dice-add-button")?.addEventListener("click", () => {
     document.querySelector("#dice-dialog").showModal();
@@ -739,7 +769,7 @@ function startPlayerHeartbeat() {
 }
 
 function makeBoardItemDraggable(item, ignoreButtons = false) {
-  const itemId = item.dataset.dieId || item.dataset.counterId;
+  const itemId = item.dataset.boardDieId || item.dataset.counterId;
   const savedPosition = boardItemPositions.get(itemId);
   if (savedPosition) {
     item.style.left = `${savedPosition.left}px`;
@@ -747,14 +777,15 @@ function makeBoardItemDraggable(item, ignoreButtons = false) {
     item.style.right = "auto";
   }
 
-  let dragState = null;
   item.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
     if (ignoreButtons && event.target.closest("button")) return;
     event.stopPropagation();
     const bounds = item.getBoundingClientRect();
     const boardBounds = item.parentElement.getBoundingClientRect();
-    dragState = {
+    activeBoardDrag = {
+      item,
+      itemId,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
@@ -764,29 +795,5 @@ function makeBoardItemDraggable(item, ignoreButtons = false) {
       boardBounds,
       moved: false,
     };
-    item.setPointerCapture(event.pointerId);
-  });
-  item.addEventListener("pointermove", (event) => {
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-    const deltaX = event.clientX - dragState.startX;
-    const deltaY = event.clientY - dragState.startY;
-    if (!dragState.moved && Math.hypot(deltaX, deltaY) < 4) return;
-    dragState.moved = true;
-    const maxLeft = dragState.boardBounds.width - dragState.bounds.width;
-    const maxTop = dragState.boardBounds.height - dragState.bounds.height;
-    const nextLeft = Math.max(0, Math.min(maxLeft, dragState.originX + deltaX));
-    const nextTop = Math.max(0, Math.min(maxTop, dragState.originY + deltaY));
-    item.style.left = `${nextLeft}px`;
-    item.style.top = `${nextTop}px`;
-    item.style.right = "auto";
-    boardItemPositions.set(itemId, { left: nextLeft, top: nextTop });
-  });
-  item.addEventListener("pointerup", (event) => {
-    if (!dragState || dragState.pointerId !== event.pointerId) return;
-    if (dragState.moved) item.dataset.dragged = "true";
-    dragState = null;
-  });
-  item.addEventListener("pointercancel", () => {
-    dragState = null;
   });
 }
